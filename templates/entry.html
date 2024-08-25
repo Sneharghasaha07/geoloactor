@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Check</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function updateLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    position => {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+
+                        document.getElementById('latitude').value = latitude;
+                        document.getElementById('longitude').value = longitude;
+                        document.getElementById('coordinates').innerText = `Latitude: ${latitude}, Longitude: ${longitude}`;
+
+                        fetchDistance(latitude, longitude);
+                    },
+                    error => {
+                        let errorMessage;
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = "User denied the request for Geolocation.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = "Location information is unavailable.";
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = "The request to get user location timed out.";
+                                break;
+                            case error.UNKNOWN_ERROR:
+                                errorMessage = "An unknown error occurred.";
+                                break;
+                        }
+                        alert('Error fetching location: ' + errorMessage);
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        function fetchDistance(latitude, longitude) {
+            fetch('/distance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ latitude, longitude })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('distance').innerText = `Distance from site: ${data.distance} meters`;
+            })
+            .catch(error => console.error('Error fetching distance:', error));
+        }
+
+        window.onload = updateLocation;
+    </script>
+</head>
+<body>
+    <h2>Checking Your Location...</h2>
+    <div id="coordinates"></div>
+    <div id="distance"></div>
+    <form id="locationForm" method="POST">
+        <input type="hidden" id="latitude" name="latitude">
+        <input type="hidden" id="longitude" name="longitude">
+    </form>
+</body>
+</html>
